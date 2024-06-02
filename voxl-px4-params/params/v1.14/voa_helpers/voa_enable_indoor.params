@@ -1,0 +1,28 @@
+################################################################################
+# PX4 Collision Prevention Settings
+################################################################################
+
+
+############################################################
+# TEMPORARILY SWAP POS MODE TO 0 FOR VOA
+# this is because PX4 mainline currently does not support
+# VOA in the default position mode of 4
+############################################################
+1	1	MPC_POS_MODE	0	6
+
+
+
+# Minimum allowed distance
+1	1	CP_DIST	1.0	9
+
+# Set delay to 0 since we do accurate timestamping and delay compensation
+1	1	CP_DELAY	0.0	9
+
+# Angle (to both sides of the commanded direction) within which the vehicle may
+# deviate if it finds fewer obstacles in that direction
+# behaves unpredictably when >0, just leave at 0
+1	1	CP_GUIDE_ANG	0.0	9
+
+## Allow the vehicle to move in directions where there is no sensor coverage 
+1	1	CP_GO_NO_DATA	1	9
+

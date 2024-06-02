@@ -1,0 +1,50 @@
+################################################################################
+# Config for outdoor flight with Flow, magnetomter, and Barometer, no VIO or GPS
+################################################################################
+
+
+################################################################################
+# attached hardware (not necessary used)
+################################################################################
+1	1	SYS_HAS_MAG	1	6
+1	1	SYS_HAS_GPS	1	6
+1	1	COM_ARM_WO_GPS	1	9
+
+
+################################################################################
+# enabled sensors in EKF2
+################################################################################
+1	1	EKF2_GPS_CTRL	0	6
+1	1	EKF2_MAG_TYPE	5	6
+1	1	EKF2_BARO_CTRL	1	6
+1	1	EKF2_EV_CTRL	0	6
+1	1	EKF2_OF_CTRL	1	6
+1	1	EKF2_RNG_CTRL	0	6
+
+# 0=baro 1=GPS 2=rangefinder 3=Vision
+1	1	EKF2_HGT_REF	0	6
+
+
+
+################################################################################
+## optic flow specific things
+################################################################################
+
+## increase gate and noise TODO VALIDATE THIS
+1	1	EKF2_OF_DELAY	80.0	9
+1	1	EKF2_OF_GATE	3.0	9
+1	1	EKF2_OF_N_MAX	0.5	9
+1	1	EKF2_OF_N_MIN	0.5	9
+
+## yaw 90 corresponds to the cam looking down as a gimbal would tilt down
+1	1	SENS_FLOW_ROT	2	6
+
+# height cutoff allowed for range aid mode
+1	1	EKF2_RNG_A_HMAX	1.0000000000000000	9
+
+# gates
+1	1	EKF2_RNG_GATE	5.00000000000000000	9
+1	1	EKF2_RNG_A_IGATE	1.000000000000000000	9
+1	1	EKF2_RNG_NOISE	1.0	9
+
+

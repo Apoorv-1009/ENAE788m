@@ -1,0 +1,413 @@
+################################################################################
+# Hardware-Specific Configuration for an FPV Drone on 6S
+# and VOXL2 Flight running PX4 v1.14
+#
+# This is NOT a complete set of PX4 parameters. These are non-default parameters
+# specific to the airframe and are meant to be loaded over the defaults.
+#
+# CHANGELOG:
+#
+# August 23, 2023
+# - Change RC_MAP_KILL_SW to 8 to account for 7 being taken
+#
+# June 29, 2023
+# - Set MODALAI_CONFIG to 1 to enable FPV specific behaviors
+#
+# May 16, 2023
+# - set SENS_BOARD_ROT to 4 to account for backwards VOXL mounting instead of
+#   the IMU driver needing to be modified
+#
+# March 21, 2023 Rev E:
+# - Copy over MPC_XY_* pid gains from starling for docile optic flow
+#
+# January 30, 2023 changes for ESC params w/o feedback
+# - specifies trapezoidal geometry
+# - changes thrust curve parameters
+# - increase of max rate parameters and max angle parameters
+# - tuned roll, pitch, and yaw gains
+#
+# January 31, 2023 
+# - changes for height control
+#
+# February 7, 2023
+# - more changes for height control to match Rev0 parameters
+# - disarming parameters to match Rev0
+# - battery parameters to match Rev0
+#
+# February 14, 2023
+# - decrease EKF2_BARO_NOISE to 0.75
+#
+# February 21, 2023
+# - changed to params for use with ESC feedback
+#
+# March 2, 2023
+# - decreased responsiveness of roll and pitch controllers to decrease command noise
+#
+# March 14, 2023
+# - merged parameters
+################################################################################
+
+################################################################################
+# quadcopter X type with no safety switch and 180 yaw (backwards) board mount
+################################################################################
+1	1	SYS_AUTOSTART	4001	6
+1	1	MAV_TYPE	2	6
+1	1	CBRK_IO_SAFETY	22027	6
+1	1	SENS_BOARD_ROT	4	6
+1	1	CAL_MAG0_ROT	0	6
+
+# Temporary until we figure out why the default 1.0s timeout is randomly triggered
+1	1	COM_OF_LOSS_T	3.0	9
+
+################################################################################
+# Hardware Configs
+################################################################################
+# DJI OSD 
+1	1	OSD_CH_HEIGHT	0	6
+1	1	OSD_DWELL_TIME	500	6
+1	1	OSD_LOG_LEVEL	3	6
+1	1	OSD_SCROLL_RATE	125	6
+1	1	OSD_SYMBOLS	16383	6
+
+# Flow Sensor
+1	1	SENS_FLOW_MAXHGT	100.000000000000000000	9
+1	1	SENS_FLOW_MAXR	2.500000000000000000	9
+1	1	SENS_FLOW_MINHGT	0.699999988079071045	9
+1	1	SENS_FLOW_RATE	70.000000000000000000	9
+1	1	SENS_FLOW_ROT	2	6
+
+# Misc
+1	1	SDLOG_MODE	2	6
+1	1	SDLOG_PROFILE	1	6
+1	1	COM_ARM_SDCARD	0	6
+1	1	UAVCAN_ENABLE	0	6
+1	1	COM_CPU_MAX	-1	6
+
+################################################################################
+# Flight modes for R/C
+################################################################################
+
+1	1	RC_CHAN_CNT	12	6
+1	1	COM_FLTMODE1	2	6
+1	1	COM_FLTMODE2	-1	6
+1	1	COM_FLTMODE3	-1	6
+1	1	COM_FLTMODE4	1	6
+1	1	COM_FLTMODE5	-1	6
+1	1	COM_FLTMODE6	0	6
+1	1	RC_MAP_ARM_SW	5	6
+1	1	RC_MAP_FLTMODE	6	6
+1	1	RC_MAP_KILL_SW	8	6
+1	1	RC_MAP_PITCH	2	6
+1	1	RC_MAP_ROLL	1	6
+1	1	RC_MAP_THROTTLE	3	6
+1	1	RC_MAP_YAW	4	6
+
+# disable arm gesture, use only arm switch
+1	1	MAN_ARM_GESTURE	0	6
+
+1	1	MC_ACRO_EXPO	0.689999997615814209	9
+1	1	MC_ACRO_EXPO_Y	0.689999997615814209	9
+1	1	MC_ACRO_P_MAX	720.000000000000000000	9
+1	1	MC_ACRO_R_MAX	720.000000000000000000	9
+1	1	MC_ACRO_SUPEXPO	0.699999988079071045	9
+1	1	MC_ACRO_SUPEXPOY	0.699999988079071045	9
+1	1	MC_ACRO_Y_MAX	540.000000000000000000	9
+1	1	MC_AIRMODE	0	6
+
+
+################################################################################
+# Arming and safety checks
+################################################################################
+1	1	COM_ARM_EKF_BIAS	3.000000000000000000	9
+1	1	COM_ARM_EKF_HGT	1.000000000000000000	9
+1	1	COM_ARM_MAG_ANG	60	6
+1	1	COM_DISARM_FORCE	1	6
+1	1	COM_DISARM_LAND	1.000000000000000000	9
+1	1	COM_DISARM_PRFLT	10.000000000000000000	9
+# 1	1	COM_OF_LOSS_T	0.500000000000000000	9
+1	1	COM_PREARM_MODE	0	6
+1	1	COM_RC_IN_MODE	0	6
+1	1	COM_RC_STICK_OV	12.000000000000000000	9
+1	1	FD_FAIL_P	180	6
+1	1	FD_FAIL_R	180	6
+1	1	GF_ACTION	1	6
+1	1	EKF2_GPS_CHECK	0	6
+1	1	EKF2_MAG_CHECK	0	6
+
+# wider acceptance radius for navigation
+1	1	NAV_ACC_RAD	10.000000000000000000	9
+
+# faster response to RC loss
+1	1	NAV_RCL_ACT	3	6
+
+################################################################################
+# Battery Config
+# resistance is per cell
+################################################################################
+1	1	BAT1_N_CELLS	6	6
+1	1	BAT1_R_INTERNAL	0.007	9
+1	1	BAT1_CAPACITY	1215	9
+
+1	1	BAT1_V_CHARGED	4.05	9
+1	1	BAT1_V_EMPTY	3.50	9
+
+1	1	BAT_LOW_THR	0.20	9
+1	1	BAT_CRIT_THR	0.15	9
+1	1	BAT_EMERGEN_THR	0.10	9
+
+
+###############################################################################
+# EKF2 Setup
+###############################################################################
+
+
+## for all other ekf2 stuff USE HELPERS INSTEAD
+
+# air speed estimation stuff
+1	1	EKF2_ARSP_THR	0.100000001490116119	9
+1	1	EKF2_FUSE_BETA	1	6
+1	1	EKF2_BCOEF_X	102.000000000000000000	9
+1	1	EKF2_BCOEF_Y	102.000000000000000000	9
+1	1	EKF2_MCOEF	0.319999992847442627	9
+
+1	1	HTE_HT_NOISE	0.000500000023748726	9
+
+
+## bias learning limit
+1	1	EKF2_ABL_LIM	0.4	9
+
+
+## reduce baro noise (px4 default is 2.0)
+1	1	EKF2_BARO_NOISE	0.75	9
+
+
+# height control params
+1	1	EKF2_GND_EFF_DZ	0.0	9
+
+## This isn't in the standard PX4 param set?
+1	1	HTE_HT_NOISE	0.0005	9
+
+
+###############################################################################
+# allow worse GPS lock to help with tiny Matek GPS unit
+###############################################################################
+1	1	EKF2_REQ_PDOP	3.5	9
+1	1	EKF2_REQ_SACC	1.0	9
+1	1	EKF2_REQ_EPH	6.0	9
+1	1	EKF2_REQ_EPV	10.0	9
+
+
+################################################################################
+# Motors/ESCs
+################################################################################
+
+# bat scaling off with ModalESC
+1	1	MC_BAT_SCALE_EN	0	6
+
+# Thrust curve coefficient calculated from Dyno Bench data
+# everything else needs retuning if this changes.
+1	1	THR_MDL_FAC	0.8069	9
+
+# hover throttle needs tuning when changing payload or battery
+1	1	MPC_THR_HOVER	0.23	9
+
+1	1	VOXL_ESC_BAUD	2000000	6
+1	1	VOXL_ESC_CONFIG	1	6
+1	1	VOXL_ESC_FUNC1	103	6
+1	1	VOXL_ESC_FUNC2	102	6
+1	1	VOXL_ESC_FUNC3	104	6
+1	1	VOXL_ESC_FUNC4	101	6
+1	1	VOXL_ESC_MODE	0	6
+1	1	VOXL_ESC_REV	0	6
+1	1	VOXL_ESC_RPM_MAX	24000	6
+1	1	VOXL_ESC_RPM_MIN	3000	6
+1	1	VOXL_ESC_SDIR1	1	6
+1	1	VOXL_ESC_SDIR2	1	6
+1	1	VOXL_ESC_SDIR3	1	6
+1	1	VOXL_ESC_SDIR4	1	6
+1	1	VOXL_ESC_T_COSP	0.990000009536743164	9
+1	1	VOXL_ESC_T_DEAD	20	6
+1	1	VOXL_ESC_T_EXPO	35	6
+1	1	VOXL_ESC_T_MINF	0.150000005960464478	9
+1	1	VOXL_ESC_T_PERC	90	6
+1	1	VOXL_ESC_VLOG	1	6
+
+
+################################################################################
+# IMU position config, voxl-vision-hub handles VIO position offset, not px4
+################################################################################
+1	1	EKF2_IMU_POS_X	0.0	9
+1	1	EKF2_IMU_POS_Y	-0.0155	9
+1	1	EKF2_IMU_POS_Z	0.004	9
+1	1	EKF2_EV_POS_X	0.0	9
+1	1	EKF2_EV_POS_Y	0.0	9
+1	1	EKF2_EV_POS_Z	0.0	9
+
+################################################################################
+# Noise management
+################################################################################
+1	1	MOT_SLEW_MAX	0.0	9
+1	1	IMU_DGYRO_CUTOFF	20.0	9
+1	1	IMU_ACCEL_CUTOFF	30.0	9
+1	1	IMU_GYRO_CUTOFF	180.0	9
+
+
+# dynamic notch filter
+1	1	IMU_GYRO_DNF_BW	20.000000000000000000	9
+1	1	IMU_GYRO_DNF_EN	2	6
+1	1	IMU_GYRO_DNF_HMC	3	6
+1	1	IMU_GYRO_FFT_EN	1	6
+1	1	IMU_GYRO_FFT_LEN	1024	6
+1	1	IMU_GYRO_FFT_MAX	192.000000000000000000	9
+1	1	IMU_GYRO_FFT_MIN	32.000000000000000000	9
+1	1	IMU_GYRO_FFT_SNR	10.000000000000000000	9
+
+################################################################################
+# Trapezoidal geometry dimensions 
+################################################################################
+1	1	CA_ROTOR0_PX	0.1468	9
+1	1	CA_ROTOR0_PY	0.1914	9
+
+1	1	CA_ROTOR1_PX	-0.1468	9
+1	1	CA_ROTOR1_PY	-0.1711	9
+
+1	1	CA_ROTOR2_PX	0.1468	9
+1	1	CA_ROTOR2_PY	-0.1914	9
+
+1	1	CA_ROTOR3_PX	-0.1468	9
+1	1	CA_ROTOR3_PY	0.1711	9
+
+################################################################################
+# Attitude PID
+################################################################################
+
+# disable airmode, it make the system unpredictable when touching the ground
+1	1	MC_AIRMODE	0	6
+
+# max rate and angle parameters
+1	1	MC_ROLLRATE_MAX	1600.0	9
+1	1	MC_PITCHRATE_MAX	1600.0	9
+1	1	MC_YAWRATE_MAX	1300.0	9
+1	1	MPC_MAN_TILT_MAX	60.0	9
+
+
+# Generated for RevB with ESC feedback on March 2, 2023
+# 9 Hz, 50 deg PM, IMU_DGYRO_CUTOFF = 20 Hz, generated on March 2, 2023
+1	1	MC_ROLLRATE_D	0.0014290	9
+1	1	MC_ROLLRATE_I	0.7049540	9
+1	1	MC_ROLLRATE_P	0.1007077	9
+1	1	MC_ROLL_P	7.0000000	9
+1	1	MC_ROLL_CUTOFF	17.517551	9
+
+1	1	MC_PITCHRATE_D	0.0015638	9
+1	1	MC_PITCHRATE_I	0.7714656	9
+1	1	MC_PITCHRATE_P	0.1102094	9
+1	1	MC_PITCH_P	7.0000000	9
+1	1	MC_PITCH_CUTOFF	20.160647	9
+
+# 11 Hz, 65 deg PM
+1	1	MC_YAWRATE_D	0.0000000	9
+1	1	MC_YAWRATE_I	6.3022710	9
+1	1	MC_YAWRATE_P	0.1658710	9
+1	1	MC_YAW_P	1.5	9
+1	1	MC_YAW_CUTOFF	20.009614	9
+
+
+
+###############################################################################
+# Position UI
+###############################################################################
+
+# Custom pos mode for FPV drone firmware, not a normal enum option
+1	1	MPC_POS_MODE	1	6
+
+# Expo Settings
+1	1	MPC_YAW_EXPO	0.6	9
+1	1	MPC_XY_MAN_EXPO	0.6	9
+1	1	MPC_Z_MAN_EXPO	0.6	9
+
+
+# slow jerk to hopefully keep VIO more happy (Starling is 40)
+1	1	MPC_JERK_MAX	20.0	9
+
+
+# max acc and angle, these two should closely match
+1	1	MPC_TILTMAX_AIR	30.0	9
+1	1	MPC_ACC_HOR_MAX	3.0	9
+1	1	MPC_ACC_HOR	3.0	9
+
+
+# slow yaw in position mode to keep VIO happy (PX4 default is 200)
+1	1	MPC_MAN_Y_MAX	100.0	9
+
+
+# Vertical Acceleration
+1	1	MPC_ACC_UP_MAX	4.0	9
+1	1	MPC_ACC_DOWN_MAX	3.0	9
+
+
+# Maximal tilt angle in manual or altitude mode
+1	1	MPC_MAN_TILT_MAX	60.000000000000000000	9
+
+
+# max velocities
+1	1	MPC_VEL_MANUAL	3.0	9
+1	1	MPC_XY_VEL_MAX	3.0	9
+1	1	MPC_XY_CRUISE	3.0	9
+1	1	MPC_Z_VEL_MAX_DN	1.5	9
+1	1	MPC_Z_VEL_MAX_UP	1.5	9
+1	1	MPC_LAND_SPEED	0.7	9
+
+
+
+
+################################################################################
+# Position Feedback Control
+################################################################################
+
+# tweak MPC_THR_MIN to prevent roll/pitch losing control
+# authority under rapid downward acceleration
+1	1	MPC_THR_MAX	0.80	9
+1	1	MPC_THR_MIN	0.04	9
+1	1	MPC_MANTHR_MIN	0.04	9
+
+# Horizontal position PID, docile for optic flow
+1	1	MPC_XY_P	0.95	9
+1	1	MPC_XY_VEL_P_ACC	1.5	9
+1	1	MPC_XY_VEL_I_ACC	0.10	9
+1	1	MPC_XY_VEL_D_ACC	0.00	9
+
+# Vertical position PID
+1	1	MPC_Z_P	0.3	9
+1	1	MPC_Z_VEL_P_ACC	5.7	9
+1	1	MPC_Z_VEL_I_ACC	4.8	9
+
+
+## Not in standard PX4 param set?
+1	1	MPC_Z_V_AUTO_DN	1.00	9
+1	1	MPC_Z_V_AUTO_UP	1.3	9
+
+
+
+###############################################################################
+# takeoff and land params
+#
+# spoolup and ramp only help in position mode
+###############################################################################
+
+# smooth takeoff
+1	1	MPC_TKO_RAMP_T	1.00	9
+1	1	MPC_TKO_SPEED	1.50	9
+1	1	COM_SPOOLUP_TIME	2.0	9
+
+# Land detection
+1	1	LNDMC_ALT_GND	-1.0	9
+1	1	LNDMC_ROT_MAX	20.0	9
+1	1	MPC_LAND_ALT1	5.000000000000000000	9
+1	1	MPC_LAND_ALT2	2.000000000000000000	9
+1	1	MPC_LAND_ALT3	1.000000000000000000	9
+
+###############################################################################
+# Miscellaneous params
+###############################################################################
+1	1	MODALAI_CONFIG	1	6

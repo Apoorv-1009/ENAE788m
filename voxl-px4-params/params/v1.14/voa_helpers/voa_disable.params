@@ -1,0 +1,16 @@
+################################################################################
+# PX4 Collision Prevention Settings
+################################################################################
+
+############################################################
+# Put pos mode back to 4
+# enabling VOA would have set this to 0.
+# this is because PX4 mainline currently does not support
+# VOA in the default position mode of 4
+############################################################
+1	1	MPC_POS_MODE	0	6
+
+
+## disable collision prevention
+1	1	CP_DIST	-1	9
+

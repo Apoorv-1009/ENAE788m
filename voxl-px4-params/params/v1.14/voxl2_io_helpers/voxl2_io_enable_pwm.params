@@ -1,0 +1,14 @@
+# helper to enable pwm output with VOXL2 IO expansion board (M0065)
+#
+#
+#
+# This is for controlling legacy 1000us-2000us pulse duration modulated
+# ESCs with a VOXL2.
+
+1	1	VOXL2_IO_BAUD	921600	6
+1	1	VOXL2_IO_FUNC1	101	6
+1	1	VOXL2_IO_FUNC2	102	6
+1	1	VOXL2_IO_FUNC3	103	6
+1	1	VOXL2_IO_FUNC4	104	6
+1	1	VOXL2_IO_MIN	1000	6
+1	1	VOXL2_IO_MAX	2000	6

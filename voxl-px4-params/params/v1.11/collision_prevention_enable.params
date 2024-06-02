@@ -1,0 +1,19 @@
+################################################################################
+# PX4 Collision Prevention Settings
+################################################################################
+
+## Minimum allowed distance (the closest distance that the vehicle can approach the 
+## obstacle
+1	1	CP_DIST	1.5	9
+
+## The delay can safely be set to 0 since we do accurate timestamping and delay 
+## compensation inside voxl-vision-px4. Increasing the delay over 0 will only 
+## cause twitchiness and unpredicatable performance.
+1	1	CP_DELAY	0.0	9
+
+## Angle (to both sides of the commanded direction) within which the vehicle may
+## deviate if it finds fewer obstacles in that direction
+1	1	CP_GUIDE_ANG	0.0	9
+
+## Allow the vehicle to move in directions where there is no sensor coverage 
+1	1	CP_GO_NO_DATA	1	9

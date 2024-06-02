@@ -1,0 +1,20 @@
+################################################################################
+# EKF2 config for outdoor flight with GPS, magnetomter, and Barometer, no VIO
+################################################################################
+
+## enable the mag
+1	1	SYS_HAS_MAG	1	6
+
+## set magnetometer type to default (auto)
+1	1	EKF2_MAG_TYPE	0	6
+
+## GPS for position, no vision!
+1	1	EKF2_AID_MASK	1	6
+
+## Barometer for height, no Vision
+## alternatively set to 1 for GPS height instead of barometer
+1	1	EKF2_HGT_MODE	0	6
+
+## Arm only with GPS. This is enabled for indoor flight testing. 
+1	1	COM_ARM_WO_GPS	0	9
+

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+__contains_word () {
+		local w word=$1; shift
+		for w in "$@"; do
+				[[ $w = "$word" ]] && return
+		done
+}
+
+_voxl_configure_px4_params(){
+
+	local OPTS=('--help --non-interactive --wizard --quiet --file --platform')
+	local OPTS_SHORT=('-h -n -w -q -f -p')
+	local PLATFORMS=('MRB-D0005-V2 MRB-D0006 MRB-D0008 MRB-D0010 MRB-D0011 MRB-D0013')
+
+	COMPREPLY=()
+	if [ "$COMP_CWORD" -eq 1 ]; then
+		COMPREPLY=( $(compgen -W '${OPTS}' -- ${COMP_WORDS[COMP_CWORD]}) )
+		return 0
+	fi
+
+	#Check to see if the previous command was a valid OPT
+	if  __contains_word "${COMP_WORDS[COMP_CWORD-1]}" $OPTS  ||
+		__contains_word "${COMP_WORDS[COMP_CWORD-1]}" $OPTS_SHORT ; then
+
+		case "${COMP_WORDS[COMP_CWORD-1]}" in
+			"-p"|"--platform") # platform name
+				COMPREPLY=( $(compgen -W '${PLATFORMS}' -- ${COMP_WORDS[COMP_CWORD]}) )
+				return 0
+				;;
+			*)
+				COMPREPLY=( $(compgen -W '${OPTS}' -- ${COMP_WORDS[COMP_CWORD]}) )
+				return 0
+				;;
+		esac
+	fi
+
+
+}
+
+complete -F _voxl_configure_px4_params voxl-configure-px4-params
