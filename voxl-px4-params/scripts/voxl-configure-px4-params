@@ -1,0 +1,672 @@
+#!/usr/bin/python3
+
+import argparse
+import subprocess
+import time
+import os
+import re
+from typing import Tuple
+
+# COLORS!
+RESET = "\033[0m"
+GRN = "\033[1;32m"
+LIT_GRN = "\033[92m"
+RED = "\033[1;31m"
+WARN = "\033[33m"
+CLEAR ="\033c"
+BOLD="\033[1m"
+RESET_BOLD="\033[21m"
+
+PARAM_INT=6
+PARAM_FLOAT=9
+
+BASE_DIR = "/usr/share/modalai/px4_params/v1.14"
+PLATFORM_DIR = BASE_DIR + "/platforms"
+PARAMS_PATH = "/data/px4/param/parameters"
+SKU = "/data/modalai/sku.txt"
+PLATFORM_DIC = {
+	"MRB-D0005-V2" : ("platforms/Starling_V2.params", "EKF2_helpers/indoor_vio.params", "radio_helpers/Commando_8.params"),
+	"MRB-D0006"    : ("platforms/Sentinel_V1.params", "EKF2_helpers/outdoor_gps_baro.params"),
+	"MRB-D0006-V2" : ("platforms/Sentinel_V1.params", "EKF2_helpers/outdoor_gps_baro.params", "radio_helpers/Commando_8.params"),
+	"MRB-D0008"    : ("platforms/FPV_RevB.params", "EKF2_helpers/outdoor_gps_baro.params"),
+	"MTB-D0005-V2" : ("ci_helpers/ci_starling_v2.params"),
+	"MTB-D0006"    : ("ci_helpers/ci_sentinel.params"),
+	"MTB-D0008"    : ("ci_helpers/ci_fpv_revB.params"),
+	"MRB-D0010"    : ("platforms/Starling_V2.params", "EKF2_helpers/indoor_vio_missing_gps.params", "radio_helpers/Commando_8.params"),
+	"MRB-D0011"    : ("platforms/Starling_PX4_edition.params", "EKF2_helpers/indoor_vio.params", "radio_helpers/Commando_8.params"),
+	"MRB-D0013"    : ("platforms/D0013.params", "EKF2_helpers/indoor_vio.params", "radio_helpers/Commando_8.params"),
+}
+
+CAL_PARAMS_PATH = "/data/px4/param"
+CAL_PARAM_FILES = [ "parameters_gyro.cal", "parameters_acc.cal", "parameters_level.cal", "parameters_mag.cal", "parameters_rc.cal", "parameters_baro.cal" ]
+
+# Parse args
+def parse_args() -> dict:
+	"""
+	Parse and validate args
+	"""
+	parser = argparse.ArgumentParser(add_help=False)
+	parser.add_argument('-h', '--help', help='Show this help message and exit', required=False, action='store_true')
+	parser.add_argument('-n', '--non-interactive', help='Non-interactive mode for scripting', required=False, action='store_false')
+	parser.add_argument('-w', '--wizard', help='Activate interactive wizard', required=False, action='store_true')
+	parser.add_argument('-q', '--quiet', help="Quiet mode, don't print debug msgs", required=False, action='store_true')
+	parser.add_argument('-f', '--file', help='Px4-parameters file path (.params file)', required=False, type=str)
+	parser.add_argument('-p', '--platform', help='Product platform to set params for', required=False, type=str)
+	args = vars(parser.parse_args())
+	
+	if args["platform"] and args["platform"] not in PLATFORM_DIC:
+		print(f"{RED}[ERROR] Platform {args['platform']} not supported. Please enter one of the following:{RESET}")
+		print(', '.join(PLATFORM_DIC.keys()))
+		exit(1)
+
+	if not args["non_interactive"] and not args["platform"] and not args["file"]:
+		print(f"{RED}[ERROR] Platform type or file path must be specified when using non-interactive mode. {RESET}")
+		exit(1)
+
+	return args
+
+# Print help message
+def print_usage() -> None:
+	"""
+	Print usage/help message
+	"""
+	print("Description: Parse a px4-paramaters file and set the params listed in the file.")
+	print("")
+	print("Usage: voxl-configure-px4-params -h -n -w -q -f [file path] -p [platform]")
+	print("")
+	print("Optional Arguments:")
+	print(" -h, --help              Show this help message and exit")
+	print(" -n, --non-interactive   Non-interactive mode for scripting")
+	print(" -w, --wizard            Activate interactive wizard")
+	print(" -q, --quiet             Quiet mode, don't print msgs")
+	print(" -f, --file              File path to a .params file")
+	print(" -p, --platform          do full config for a specfic platform")
+	print("")
+	print("")
+	print(" Valid strings for full platform config:")
+	print("   MRB-D0005-V2 (Starling V2)")
+	print("   MRB-D0006    (Sentinel V1)")
+	print("   MRB-D0008    (FPV RevB)")
+	print("   MRB-D0011    (Starling PX4 Edition)")
+	print("   MRB-D0013")
+	print("")
+	print("")
+
+# Print message 
+def _print(msg: str) -> None:
+	"""
+	Print message and handle quiet mode
+
+	@msg: Message to be printed.
+	@quiet: Don't print msgs if True 
+	"""
+	if not QUIET:
+		print(msg)
+
+# Check if a service is running
+def is_service_running(service_name: str) -> bool:
+    """
+    Checks if a systemd service is running or not
+
+    @service_name: name of service to check
+    @return: True/False depending on service state
+    """
+    cmd = ['systemctl', 'is-active', service_name]
+    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode == 0:
+        return True
+    else:
+        return False
+
+# Read a line from a file
+def read_file_line(filename: str) -> str:
+    """
+    reads a line from a file
+
+    @filename: path of file to read
+    @return: file content
+    """ 
+    if not os.path.exists(filename):
+        return None
+    
+    with open(filename) as f:
+        content = f.read().strip()
+        return content
+
+# Restart voxl-px4 when it fails while uploading PX4 parameters
+def restart_voxl_px4() -> None:
+	"""
+	Restart voxl-px4
+	"""
+	# Yes, you could just run systemctl restart voxl-px4, but I have found that to be unreliable
+	stop_command = "systemctl stop voxl-px4"
+	start_command = "systemctl start voxl-px4"
+
+	subprocess.run(stop_command.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+	time.sleep(1)
+	subprocess.run(start_command.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+	time.sleep(5)
+
+# Trim .cal file of duplicate entries  
+def trim(calibration_file: str):
+	"""
+	Trim a calibration file of duplicate entries in order to avoid overwriting intended calibration params
+
+	@calibration_file: File of calibration parameters. **SHOULD ALREADY BE AN OPENED FILE!**
+	"""
+	cal_param_list = []
+	trim_lines : int = []
+
+	parameters = calibration_file.readlines()
+	parameters.reverse()
+	total_lines = len(parameters) -1
+
+	# Mark duplicate lines that need to be removed 
+	for current_line, parameter in enumerate(parameters):
+		if "#" in parameter.strip("\n") or parameter == "\n":
+			continue
+		
+		cal_param = parameter.strip("\n").split()[2]
+		cal_value = parameter.strip("\n").split()[3]
+		
+		# Mark duplicate for removal
+		if cal_param in cal_param_list:
+			trim_lines.append(total_lines - current_line)
+
+		# Mark sensors w/ ID of 0 for removal 
+		elif "_ID" in cal_param and int(cal_value) == 0:
+			trim_lines.append(total_lines - current_line)
+		
+		# Otherwise, add to list of params we have already seen 
+		else:
+			cal_param_list.append(cal_param)
+	
+	# Just return file in read mode if no trimming needed
+	if not trim_lines:
+		return calibration_file
+
+	# Close the file and reopen in write mode if trimming needed
+	calibration_file.close()
+	trim_lines.reverse()
+
+	# Write back only the lines we didn't mark to be trimmed in previous section
+	with open(calibration_file.name, 'w') as trimmed_file:
+		_print(f"[INFO] Trimming duplicate parameters...")
+		parameters.reverse()
+		for index, line in enumerate(parameters):
+			if index not in trim_lines:
+				trimmed_file.write(line)
+
+	# Reopen and return file in read mode
+	return open(calibration_file.name)
+
+# Validate voxl-px4 service state
+def validate_voxl_px4() -> int:
+	"""
+	Validate that the voxl-px4 service is running on target.
+	"""
+	
+	start_voxl_px4_command = ['systemctl', 'start', 'voxl-px4']
+
+	if is_service_running("voxl-px4"):
+		_print(f"[INFO] Voxl-px4 service found and active.")
+	elif not is_service_running("voxl-px4"):
+		_print(f"[INFO] Voxl-px4 not currently running.")
+
+		# Prompt user for input until valid response is given
+		while True:
+			if INTERACTIVE:
+				print(f"\nWould you like to start voxl-px4 now? (y/n)")
+				ans = input()
+				if ans.lower() == "y":
+					_print(f"\n[INFO] Starting voxl-px4 service...")
+					subprocess.run(start_voxl_px4_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+					time.sleep(8)
+					if is_service_running("voxl-px4"):
+						_print(f"[INFO] Voxl-px4 started successfully!")
+						break
+					else:
+						_print(f"{RED}[ERROR] Voxl-px4 failed to start successfully.{RESET}")
+						exit(3)
+
+				elif ans.lower() == "n":
+					_print(f"{RED}[ERROR] Voxl-px4 must be running to update params. Exiting now.{RESET}")
+					exit(4)
+
+				else:
+					print(f"{WARN}Invalid answer provided. Please enter y or n.{RESET}")
+			else:
+				_print(f"[INFO] Starting voxl-px4 service...")
+				subprocess.run(start_voxl_px4_command, stdout=subprocess.PIPE)
+				time.sleep(8)
+
+				if is_service_running("voxl-px4"):
+					_print(f"[INFO] Voxl-px4 started successfully!")
+					break
+				else:
+					_print(f"{RED}[ERROR] Voxl-px4 failed to start successfully.{RESET}")
+					exit(3)
+	return 0
+
+# Validate px4 params
+def validate_params(params_file) -> bool:
+	"""
+	Validate that recently loaded parameters were uploaded successfully.
+
+	@params_file: File of parameters to compare with currently loaded parameters
+	@return: True/False, whether parameters were uploaded successfully 
+	"""
+
+	# Return to start of file 
+	params_file.seek(0)
+
+	# Compare params currently on target with those in provided file
+	scan_params_command = ['px4-param', 'show']
+
+	# Get currently loaded parameters
+	try:
+		scan = subprocess.check_output(scan_params_command).decode('utf-8')
+	except:
+		return False
+		
+	# Compare currently loaded parameters with ones that were just uploaded
+	for line in params_file:
+		if "#" not in line and "/" not in line and line != "\n":
+			vars = line.strip("\n").split()
+			param = vars[-3]
+			val = vars[-2]
+			param_type = vars[-1]
+
+			if param in scan:
+				match = re.search(rf"{param}\s+\[[^]]*\]\s+:\s*(-?\d+(?:\.\d+)?)", scan)
+
+				if not match:
+					return False
+
+				size = len(val) if len(match.group(1)) < len(val) else len(match.group(1))
+
+				# Format both values the same
+				if param_type == PARAM_INT:
+					val = round(int(val[:size]),4)
+					cur = round(int(match.group(1)[:size]),4)
+				else:
+					val = round(float(val[:size]),4)
+					cur = round(float(match.group(1)[:size]),4)
+
+				# If params don't match then the upload failed
+				if cur != val:
+					return False
+				
+			# Parameter doesn't exist
+			else:
+				# _print(f"{param} not in scan")
+				# return False
+				continue
+
+	return True
+
+# Generate dictionary of px4 params that will be updated
+def filter_params(params_file) -> Tuple[bool, dict]:
+	"""
+	Determine which parameters in the provided params file have different values
+	than the value already loaded. 
+	
+	@params_file: File of parameters to be loaded.
+	@return:
+		True/False to continue with uploading listed param differences\n
+		Dictionary of parameters that are different and their values
+	"""
+
+	# Compare params currently on target with those in provided file
+	scan_params_command = ['px4-param', 'show']
+	diff = {}
+	current = []
+	_print(f"[INFO] Scanning currently loaded parameters...")
+	
+	try:
+		scan = subprocess.check_output(scan_params_command).decode('utf-8')
+	except:
+		return False, None
+		
+	for line in params_file:
+		if "#" not in line and "/" not in line and line != "\n":
+			vars = line.strip("\n").split()
+			param = vars[-3]
+			val = vars[-2]
+			param_type = vars[-1]
+
+			if param in scan:
+				match = re.search(rf"{param}\s+\[[^]]*\]\s+:\s*(-?\d+(?:\.\d+)?)", scan)
+
+				if not match:
+					continue
+			
+				size = len(val) if len(match.group(1)) < len(val) else len(match.group(1))
+
+				# Not matching param
+				if param_type == PARAM_INT:
+					val = round(int(val[:size]),4)
+					cur = round(int(match.group(1)[:size]),4)
+				else:
+					val = round(float(val[:size]),4)
+					cur = round(float(match.group(1)[:size]),4)
+
+				if cur != val:
+					diff[param] = str(val) 
+					current.append(str(cur))
+			else:
+				diff[param] = str(val) 
+				current.append("N/A")
+
+	if diff:
+		# Show differences 	
+		_print(f"{WARN}{BOLD}The following parameters about to be loaded differ from those currently loaded:{RESET}")
+		_print(f"{WARN}{BOLD}\tNAME    \t\tCURRENT    \tNEW{RESET}")
+		for index, key in enumerate(diff.keys()):
+			key_spacing = "    \t\t" if len(key) < 12 else "    \t"
+			val_spacing = "\t\t" if len(str(current[index])) < 8 else "\t"
+			_print(f"{WARN}[{index + 1}]\t{key}{key_spacing}{current[index]}{val_spacing}{diff[key]}{RESET}")
+
+		# If non-interactive mode then don't ask for verification
+		if INTERACTIVE:
+			while True:
+				print("\nWould you like to continue with the parameter differences listed above? (y/n)")
+				ans = input()
+				if ans.lower() == "y":
+					return True, diff
+				elif ans.lower() == "n":
+					return False, diff
+				else:
+					print(f"{WARN}Invalid answer provided, please enter y or n.{RESET}")
+		else:
+			return True, diff
+
+	else:
+		_print(f"[INFO] No difference in parameters was detected.")
+		return False, diff
+
+# Set params 
+def set_params(params_file:str) -> int:
+	"""
+	Parse a tab separated params file containing px4-parameters. Set the parameters with their corresponding values and types in voxl-px4.
+	
+	@params_file: A tab separated .params file which contains the relevant data
+	"""
+
+	assert ".params" in params_file or ".cal" in params_file, f"{RED}[ERROR] Input file must be a .params or .cal file!{RESET}"
+
+	if not os.path.exists(params_file):
+		print(f"{RED}[ERROR] Params file {params_file} not found!{RESET}")
+		return False, None
+
+	_print(f"\n[INFO] Loading file: {params_file}")
+	set_param_command = ['px4-param', 'set', '','']
+	max_attempts = 5
+	invalid_params = {}
+	with open(params_file) as params:
+
+		# Trim duplicate params
+		if params.name.split('/')[-1] in CAL_PARAM_FILES:
+			params.seek(0)
+			params = trim(calibration_file=params)
+			params.seek(0)
+
+		# Filter params to be uploaded
+		result, diff = filter_params(params)
+		
+		# Quit set params process if user doesn't want to continue after seeing diff list or no differences detected
+		if not result:
+			return 0
+
+		_print(f"\n[INFO] Setting params...")
+
+		# Case when params file was just wiped
+		if diff is None:
+			restart_voxl_px4()
+			for line in params:
+				if "#" not in line and line != "\n":
+					vars = line.strip("\n").split()
+					val = vars[-2]
+					param = vars[-3]	
+	
+					set_param_command[-2] = param
+					set_param_command[-1] = val
+
+					# Try to upload PX4 Parameters, retry up to max_attempts times if failure
+					for attempt in range(max_attempts):
+						res = subprocess.run(set_param_command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+						res_stdout = res.stdout.decode("utf-8")
+						if not res.returncode:
+							if "ERROR" in res_stdout and "not found" in res_stdout:
+								invalid_params[param] = val
+							break
+						else: 
+							restart_voxl_px4()
+
+					# If we fail after max_attempts tries to upload PX4 Parameters then exit 
+					if res.returncode:
+						print(f"{RED}[ERROR] Failed to set PX4 parameters. Check voxl-px4 status for details.{RESET}")
+						exit(3)
+
+		# Upload parameters
+		else:
+			for key in diff.keys():
+				set_param_command[-2] = key
+				set_param_command[-1] = diff[key]
+
+				# Try to upload PX4 Parameters, retry up to max_attempts times if failure
+				for attempt in range(max_attempts):
+					res = subprocess.run(set_param_command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+					res_stdout = res.stdout.decode("utf-8")
+					if not res.returncode:
+						if "ERROR" in res_stdout and "not found" in res_stdout:
+							invalid_params[key] = diff[key]
+						break
+					else: 
+						restart_voxl_px4()
+				
+				# If we fail after max_attempts tries to upload PX4 Parameters then exit 
+				if res.returncode:
+					print(f"{RED}[ERROR] Failed to set PX4 parameters. Check voxl-px4 status for details.{RESET}")
+					exit(3)
+
+			# Double check that all params in current file were uploaded correctly
+			if validate_params(params):
+				_print(f"{GRN}[INFO] PX4 parameter configuration successful!{RESET}")
+			else:
+				print(f"{RED}[ERROR] Failed to set PX4 parameters. Check voxl-px4 status for details.{RESET}")
+				exit(-1)
+
+			# Show any params that don't exist
+			if invalid_params:
+				_print(f"{WARN}{BOLD}[WARNING] The following parameters don't exist in your current version of PX4 and weren't loaded:{RESET}")
+				_print(f"{WARN}{BOLD}\tNAME    \t\tVALUE{RESET}")
+				for index, key in enumerate(invalid_params.keys()):
+					key_spacing = "    \t\t" if len(key) < 12 else "    \t"
+					_print(f"{WARN}[{index + 1}]\t{key}{key_spacing}{invalid_params[key]}{RESET}")
+				_print("\n")
+
+		# Trim duplicate params again since px4 will have just written duplicates back
+		if params.name.split('/')[-1] in CAL_PARAM_FILES:
+			params.seek(0)
+			params = trim(calibration_file= params)
+
+	return 0
+
+# Show param upload options based on given directory
+def show_options(directory: str) -> str:
+	"""
+	Show user possible options to select based on the current directory.
+
+	@directory: The current directory in which we are looking.
+	@return: The next directory to move to, or exit command.
+	"""
+	cases = {}
+	options = os.listdir(directory)
+	parent_directory = os.path.dirname(directory)
+	
+	# Allow user to quit from any menu
+	options.insert(0,"Quit")
+
+	# Provided extra options based on current directory
+	if directory == BASE_DIR:
+		options.insert(1,"Reset ALL PX4 params to default")
+		options.append("calibration files")
+
+	elif "platforms" in directory:
+		options.insert(1,"Back")
+
+	elif directory == CAL_PARAMS_PATH:
+		options.insert(1,"Back")
+		options.remove("parameters")
+		options.append("All calibration files")
+
+	else:
+		options.insert(1,"Back")
+
+	while True:
+		if (directory == BASE_DIR) or (directory == CAL_PARAMS_PATH):
+			option = "an option"
+		else:
+			option = "a " + directory.split('/')[-1].replace("_"," ")[:-1]
+
+		# List options
+		print(f"{LIT_GRN}Select {option}:{RESET}")
+		for index, option in enumerate(options):
+			print(f"[{index + 1}] {option}")
+			cases[index + 1] = option
+
+		try:
+			ans = cases.get(int(input()))
+			print(f"{CLEAR}")
+		except:
+			print(f"{WARN}Invalid answer provided, please select a valid option.{RESET}")
+			continue
+
+		# Validate input
+		if ans == None:
+			print(f"{WARN}Invalid answer provided, please select a valid option.{RESET}")
+
+		# Set params
+		elif ".params" in ans:
+			set_params(directory + "/" + ans)
+			return parent_directory
+		
+		# Return to parent directory
+		elif ans == "Back":
+			if directory == CAL_PARAMS_PATH:
+				return BASE_DIR
+			
+			return parent_directory 
+		
+		# Set some sort of reset or default params
+		elif ans == "Reset ALL PX4 params to default":
+			return "Reset"
+		
+		# Set some sort of reset or default params
+		elif ans == "calibration files":
+			return CAL_PARAMS_PATH
+		
+		# Quit
+		elif ans == "Quit":
+			return None
+		
+		# Navigate to new directory
+		else:
+			return directory + "/" + ans
+
+# Handle reset procedure
+def reset() -> str:
+	"""
+	Handle the case when a user selects to reset params to default or wipe clean
+
+	@return: The next directory to move to, or exit command.
+	"""
+	_print(f"[INFO] Wiping params file...")
+
+	if os.path.exists(PARAMS_PATH):
+		os.remove(PARAMS_PATH)
+
+	_print(f"[INFO] Restarting voxl-px4 service...")
+	restart_voxl_px4()
+	time.sleep(5)
+
+	return BASE_DIR
+
+# Wizard for handling interactive mode
+def wizard() -> int:
+	"""
+	Handle interactive mode, guide user through option menus and handle input.
+	"""
+	directory = BASE_DIR
+	while True:
+		# Show options for current directory, receive new directory to move to 
+		directory = show_options(directory)
+		
+		if directory == None:
+			return 0
+	
+		if directory is "Reset":
+			directory = reset()
+
+		if ".cal" in directory:
+			set_params(directory)
+			directory = CAL_PARAMS_PATH
+
+		if "All calibration files" in directory:
+			for i in CAL_PARAM_FILES:
+				curr_cal_file = CAL_PARAMS_PATH + "/" + i
+			
+				if os.path.isfile(curr_cal_file):
+					set_params(curr_cal_file)
+
+			directory = CAL_PARAMS_PATH
+
+		# Quit process
+		if directory is None:
+			break
+	
+	return 0
+		
+
+if __name__ == "__main__":
+	args = parse_args()
+	QUIET = args["quiet"]
+	EMPTY_ARGS = [False, True, False, False, None, None]
+	
+	# By default this arg is True, which means INTERACTIVE by default is True
+	# The --non-interactive flag will set args["non-interactive"] to be False.
+	INTERACTIVE = args["non_interactive"]
+	
+	# Print help message if no args provided
+	if list(args.values()) == EMPTY_ARGS or args["help"]:	
+		print_usage()
+		exit(0)
+
+	# Check that voxl-px4 is running, prompt user for action if service is not running
+	validate_voxl_px4()
+	
+	# Handle load params by specific file
+	if args["file"]:
+		set_params(args["file"])
+		exit(0)
+	
+	# Handle load params by specific platform
+	if args["platform"]:
+		param_list=PLATFORM_DIC[args["platform"][:]]
+		print(f"[INFO] Loading the following param files: {', '.join(param_list)}.")
+		for param_file in param_list:
+			set_params(BASE_DIR + "/" + param_file)
+
+		for cal_file in CAL_PARAM_FILES:
+			curr_cal_file = CAL_PARAMS_PATH + "/" + cal_file
+			
+			if os.path.isfile(curr_cal_file):
+				set_params(curr_cal_file)
+
+		_print(f"{GRN}[INFO] Done configuring for platform " + args["platform"] + f"{RESET}")
+		exit(0)
+
+	# Start interactive process
+	if args["wizard"]:
+		wizard()

@@ -1,0 +1,55 @@
+################################################################################
+# Example PX4 Radio configuration for Spektrum DX6e radio
+#
+# This assumes a clean acro model in the radio. You must still calibrate first
+# before loading this!
+#
+# switch "G" (ch 6 AUX1) will be the kill switch
+# POS 0&1: Kill switch engaged, POS 2: Kill switch disengages
+#
+# switch "D"(ch 5 GEAR) will switch flight modes
+# Up: manual mode    Middle: Position mode    Down: Offboard Mode (figure eight)
+################################################################################
+
+
+1	1	RC_MAP_ACRO_SW	0	6
+1	1	RC_MAP_ARM_SW	0	6
+1	1	RC_MAP_AUX1	0	6
+1	1	RC_MAP_AUX2	0	6
+1	1	RC_MAP_AUX3	0	6
+1	1	RC_MAP_AUX4	0	6
+1	1	RC_MAP_AUX5	0	6
+1	1	RC_MAP_AUX6	0	6
+1	1	RC_MAP_FAILSAFE	0	6
+1	1	RC_MAP_FLAPS	0	6
+1	1	RC_MAP_FLTMODE	7	6
+1	1	RC_MAP_GEAR_SW	0	6
+1	1	RC_MAP_KILL_SW	5	6
+1	1	RC_MAP_LOITER_SW	0	6
+1	1	RC_MAP_MAN_SW	0	6
+1	1	RC_MAP_MODE_SW	0	6
+1	1	RC_MAP_OFFB_SW	0	6
+1	1	RC_MAP_PARAM1	0	6
+1	1	RC_MAP_PARAM2	0	6
+1	1	RC_MAP_PARAM3	0	6
+1	1	RC_MAP_PITCH	2	6
+1	1	RC_MAP_POSCTL_SW	0	6
+1	1	RC_MAP_RATT_SW	0	6
+1	1	RC_MAP_RETURN_SW	0	6
+1	1	RC_MAP_ROLL	1	6
+1	1	RC_MAP_STAB_SW	0	6
+1	1	RC_MAP_THROTTLE	3	6
+1	1	RC_MAP_TRANS_SW	0	6
+1	1	RC_MAP_YAW	4	6
+
+
+# DXS flight modes for manual, position, offboard
+1	1	COM_FLTMODE1	7	6
+1	1	COM_FLTMODE2	-1	6
+1	1	COM_FLTMODE3	-1	6
+1	1	COM_FLTMODE4	2	6
+1	1	COM_FLTMODE5	-1	6
+1	1	COM_FLTMODE6	0	6
+
+# reverse kill switch
+1	1	RC5_REV	-1	6

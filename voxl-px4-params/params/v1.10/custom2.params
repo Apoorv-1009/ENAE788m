@@ -1,0 +1,182 @@
+################################################################################
+# Hardware-Specific Configuration for custom2 frame
+#
+# March 27, 2020 james@modalai.com
+################################################################################
+
+## quadcopter type with no safety switch
+1	1	SYS_AUTOSTART	4001	6
+1	1	MAV_TYPE	2	6
+1	1	CBRK_IO_SAFETY	22027	6
+
+################################################################################
+# EKF2 config for indoor VIO Flight
+# Turns off GPS and barometer
+################################################################################
+
+## enable vision for height, position, and velocity, no GPS or barometer
+1	1	EKF2_AID_MASK	280	6
+1	1	EKF2_HGT_MODE	3	6
+
+
+# set MD to 0 to allow covarience from VIO to be used
+1	1	EKF2_EV_NOISE_MD	0	6
+
+
+## lower bound noise values
+1	1	EKF2_EVA_NOISE	0.05	9
+1	1	EKF2_EVP_GATE	25.0	9
+1	1	EKF2_EVP_NOISE	0.02	9
+1	1	EKF2_EVV_GATE	25.0	9
+1	1	EKF2_EVV_NOISE	0.02	9
+
+## Turn off EV Delay, VOXL will do proper timesyncing
+1	1	EKF2_EV_DELAY	0.00	9
+
+## increase bias limit to prevent preflight check failure
+1	1	COM_ARM_EKF_AB 0.017	9
+
+## enable vision for height, position, and velocity, no GPS or barometer
+1	1	SYS_HAS_MAG	0	6
+1	1	GPS_1_CONFIG	0	6
+1	1	GPS_2_CONFIG	0	6
+
+################################################################################
+# Battery Config
+################################################################################
+# Internal Resistance is per each cell
+1	1	BAT_N_CELLS	4	6
+1	1	BAT_R_INTERNAL	0.007	9
+1	1	BAT_CAPACITY	2000	9
+
+# conservative empty voltage of 3.5V
+1	1	BAT_V_CHARGED	4.05	9
+1	1	BAT_V_EMPTY	3.50	9
+1	1	MC_BAT_SCALE_EN	1	6
+
+# Low battery levels
+1	1	BAT_LOW_THR	0.15	9
+1	1	BAT_CRIT_THR	0.10	9
+1	1	BAT_EMERGEN_THR	0.05	9
+
+# Unused parameter
+1	1	BAT_V_LOAD_DROP	0.30	9
+
+
+################################################################################
+# Motors/ESC
+################################################################################
+# disable dshot
+1	1	DSHOT_CONFIG	0	6
+1	1	DSHOT_TEL_CFG	0	6
+
+# pwm range for Cindy
+1	1	PWM_MAX	2000	6
+1	1	PWM_MIN	1075	6
+1	1	PWM_RATE	400	6
+
+# Thrust curve coefficient calculated from Dyno Bench data
+# everything else needs retuning if this changes.
+1	1	THR_MDL_FAC	0.73	9
+
+# hover throttle needs tuning when changing payload or battery
+1	1	MPC_THR_HOVER	0.25	9
+
+
+################################################################################
+# IMU / VOXL position config
+################################################################################
+1	1	EKF2_IMU_POS_X	0.061	9
+1	1	EKF2_IMU_POS_Y	-0.0155	9
+1	1	EKF2_IMU_POS_Z	-.04	9
+1	1	EKF2_EV_POS_X	0.0	9
+1	1	EKF2_EV_POS_Y	0.0	9
+1	1	EKF2_EV_POS_Z	0.0	9
+
+################################################################################
+# Noise management
+################################################################################
+1	1	MOT_SLEW_MAX	0.0	9
+1	1	MC_DTERM_CUTOFF	30.0	9
+1	1	IMU_ACCEL_CUTOFF	30.0	9
+1	1	IMU_GYRO_CUTOFF	30.0	9
+
+
+################################################################################
+# Attitude PID
+################################################################################
+
+# disable airmode, it make the system unpredictable when touching the ground
+1	1	MC_AIRMODE	0	6
+
+# Pitch PID
+1	1	MC_PITCH_P	5.0	9
+1	1	MC_PITCHRATE_P	0.112	9
+1	1	MC_PITCHRATE_I	0.2	9
+1	1	MC_PITCHRATE_D	0.0021	9
+1	1	MC_PITCHRATE_K	1.0	9
+1	1	MC_PITCHRATE_MAX	180.0	9
+
+# Roll PID
+1	1	MC_ROLL_P	5.0	9
+1	1	MC_ROLLRATE_P	0.09	9
+1	1	MC_ROLLRATE_I	0.2	9
+1	1	MC_ROLLRATE_D	0.0017	9
+1	1	MC_ROLLRATE_K	1.0	9
+1	1	MC_ROLLRATE_MAX	180.0	9
+
+# Yaw PID
+1	1	MC_YAW_P	2.0	9
+1	1	MC_YAWRATE_P	0.2	9
+1	1	MC_YAWRATE_I	0.10	9
+1	1	MC_YAWRATE_D	0.0	9
+1	1	MC_YAWRATE_K	1.0	9
+1	1	MC_YAWRATE_MAX	90.0	9
+1	1	MPC_YAWRAUTO_MAX	20.0	9
+1	1	MC_YR_INT_LIM	0.6	9
+
+################################################################################
+# Position Control
+################################################################################
+
+# minimum throttle increased from default to prevent roll/pitch losing control
+# authority under rapid downward acceleration
+1	1	MPC_THR_MAX	0.75	9
+1	1	MPC_THR_MIN	0.12	9
+1	1	MPC_MANTHR_MIN	0.05	9
+
+# default position mode with a little expo, smooth mode is terrible
+1	1	MPC_POS_MODE	0	6
+1	1	MPC_YAW_EXPO	0.20	9
+1	1	MPC_XY_MAN_EXPO	0.20	9
+1	1	MPC_Z_MAN_EXPO	0.20	9
+
+# max velocities
+1	1	MPC_VEL_MANUAL	0.5	9
+1	1	MPC_XY_VEL_MAX	0.5	9
+1	1	MPC_XY_CRUISE	0.5	9
+1	1	MPC_Z_VEL_MAX_UP	0.3	9
+1	1	MPC_Z_VEL_MAX_DN	0.3	9
+1	1	MPC_LAND_SPEED	0.3	9
+
+# Horizontal position PID
+# PX4 defaults
+1	1	MPC_XY_P	0.95	9
+1	1	MPC_XY_VEL_P	0.09	9
+1	1	MPC_XY_VEL_I	0.02	9
+1	1	MPC_XY_VEL_D	0.01	9
+
+
+# Vertical position PID
+# extra-tight position hold for slow precise flight
+1	1	MPC_Z_P	1.15	9
+1	1	MPC_Z_VEL_P	0.35	9
+1	1	MPC_Z_VEL_I	0.02	9
+1	1	MPC_Z_VEL_D	0.005	9
+
+# smooth takeoff rampup and make land detector more sensitive
+1	1	LNDMC_LOW_T_THR	0.3	9
+1	1	MPC_TKO_RAMP_T	0.75	9
+1	1	MPC_TKO_SPEED	0.3	9
+
+

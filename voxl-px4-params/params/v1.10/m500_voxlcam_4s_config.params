@@ -1,0 +1,145 @@
+################################################################################
+# Hardware-Specific Configuration for ModalAI M500 with 4S battery
+#
+# This is NOT a complete set of PX4 parameters. These are non-default parameters
+# specific to the airframe and are meant to be loaded over the defaults.
+################################################################################
+
+################################################################################
+# quadcopter X type with no safety switch
+# board upright for voxlcam
+################################################################################
+1	1	SYS_AUTOSTART	4001	6
+1	1	MAV_TYPE	2	6
+1	1	CBRK_IO_SAFETY	22027	6
+1	1	SENS_BOARD_ROT	26	6
+
+################################################################################
+# Battery Config
+# resistance is per cell
+################################################################################
+
+1	1	BAT_N_CELLS	4	6
+1	1	BAT_R_INTERNAL	0.008	9
+1	1	BAT_CAPACITY	3000	9
+
+1	1	BAT_V_CHARGED	4.15	9
+1	1	BAT_V_EMPTY	3.50	9
+1	1	MC_BAT_SCALE_EN	1	6
+
+1	1	BAT_LOW_THR	0.15	9
+1	1	BAT_CRIT_THR	0.10	9
+1	1	BAT_EMERGEN_THR	0.05	9
+
+
+################################################################################
+# Motors/ESCs
+################################################################################
+# disable dshot
+1	1	DSHOT_CONFIG	600	6
+1	1	DSHOT_TEL_CFG	0	6
+
+1	1	PWM_MAX	2000	6
+1	1	PWM_MIN	1060	6
+1	1	PWM_RATE	400	6
+
+# Thrust curve coefficient calculated from Dyno Bench data
+# everything else needs retuning if this changes.
+1	1	THR_MDL_FAC	0.73	9
+
+# hover throttle needs tuning when changing payload or battery
+1	1	MPC_THR_HOVER	0.25	9
+
+
+################################################################################
+# IMU position config, voxl-vision-px4 handles VIO position offset, not px4
+################################################################################
+1	1	EKF2_IMU_POS_X	0.080	9
+1	1	EKF2_IMU_POS_Y	0.035	9
+1	1	EKF2_IMU_POS_Z	0.025	9
+1	1	EKF2_EV_POS_X	0.0	9
+1	1	EKF2_EV_POS_Y	0.0	9
+1	1	EKF2_EV_POS_Z	0.0	9
+
+
+################################################################################
+# Noise management
+################################################################################
+1	1	MOT_SLEW_MAX	0.0	9
+1	1	MC_DTERM_CUTOFF	30.0	9
+1	1	IMU_ACCEL_CUTOFF	30.0	9
+1	1	IMU_GYRO_CUTOFF	30.0	9
+
+
+################################################################################
+# Attitude PID
+################################################################################
+
+# disable airmode, it make the system unpredictable when touching the ground
+1	1	MC_AIRMODE	0	6
+
+# Pitch PID
+1	1	MC_PITCH_P	5.5	9
+1	1	MC_PITCHRATE_P	0.090	9
+1	1	MC_PITCHRATE_I	0.200	9
+1	1	MC_PITCHRATE_D	0.0013	9
+1	1	MC_PITCHRATE_K	1.0	9
+
+# Roll PID
+1	1	MC_ROLL_P	5.5	9
+1	1	MC_ROLLRATE_P	0.090	9
+1	1	MC_ROLLRATE_I	0.200	9
+1	1	MC_ROLLRATE_D	0.0013	9
+1	1	MC_ROLLRATE_K	1.0	9
+
+# Yaw PID
+1	1	MC_YAW_P	2.0	9
+1	1	MC_YAWRATE_P	0.15	9
+1	1	MC_YAWRATE_I	0.10	9
+1	1	MC_YAWRATE_D	0.0	9
+1	1	MC_YAWRATE_K	1.0	9
+
+
+################################################################################
+# Position Control
+################################################################################
+
+# tweak MPC_THR_MIN to prevent roll/pitch losing control
+# authority under rapid downward acceleration
+1	1	MPC_THR_MAX	0.75	9
+1	1	MPC_THR_MIN	0.08	9
+1	1	MPC_MANTHR_MIN	0.05	9
+
+# default position mode with a little expo, smooth mode is terrible
+1	1	MPC_POS_MODE	0	6
+1	1	MPC_YAW_EXPO	0.20	9
+1	1	MPC_XY_MAN_EXPO	0.20	9
+1	1	MPC_Z_MAN_EXPO	0.20	9
+
+# max velocities
+1	1	MPC_VEL_MANUAL	5.0	9
+1	1	MPC_XY_VEL_MAX	5.0	9
+1	1	MPC_XY_CRUISE	5.0	9
+1	1	MPC_Z_VEL_MAX_DN	1.0	9
+1	1	MPC_Z_VEL_MAX_UP	3.0	9
+1	1	MPC_LAND_SPEED	0.5	9
+
+# Horizontal position PID
+# James' PI
+1	1	MPC_XY_P	0.80	9
+1	1	MPC_XY_VEL_P	0.08	9
+1	1	MPC_XY_VEL_I	0.02	9
+1	1	MPC_XY_VEL_D	0.00	9
+
+# Vertical position PID
+# PX4 Defaults
+1	1	MPC_Z_P	1.0	9
+1	1	MPC_Z_VEL_P	0.20	9
+1	1	MPC_Z_VEL_I	0.02	9
+1	1	MPC_Z_VEL_D	0.0	9
+
+# takeoff and land params
+1	1	LNDMC_LOW_T_THR	0.3	9
+1	1	MPC_TKO_RAMP_T	1.50	9
+1	1	MPC_TKO_SPEED	1.50	9
+

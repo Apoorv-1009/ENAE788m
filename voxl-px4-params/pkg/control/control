@@ -1,0 +1,9 @@
+Package: voxl-px4-params
+Version: 0.3.3
+Section: base
+Priority: optional
+Architecture: arm64
+Depends: 
+Conflicts: voxl-px4(<<1.14.0-2.0.27)
+Maintainer: jacob.camarillo@modalai.com
+Description: Tool to help configure px4-parameters 
